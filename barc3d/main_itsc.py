@@ -80,7 +80,7 @@ def plot_solve_time(traj, ax = None):
     plt.xlabel(r'$s$')
     plt.ylabel('Solve Time (ms)')
     
-def plot_timeseries_results(trajs, styles, filename = None):
+def plot_timeseries_results(trajs, styles, labels, filename = None):
     fig = plt.figure(constrained_layout=True, figsize=(10, 10))
     #plt.figure()     
     gs1 = gridspec.GridSpec(7, 1, figure=fig)
@@ -100,7 +100,7 @@ def plot_timeseries_results(trajs, styles, filename = None):
     ax5.set_xticklabels([])
     ax6.set_xticklabels([])
     
-    for (traj,style) in zip(trajs, styles):
+    for (traj,style, label) in zip(trajs, styles, labels):
         s = [s.p.s   for s in traj]
         y = [s.p.y   for s in traj]
         th = [s.p.ths for s in traj]
@@ -110,7 +110,7 @@ def plot_timeseries_results(trajs, styles, filename = None):
         uy = [s.u.y.__float__()   for s in traj]
         N = [s.fb.f3.__float__() for s in traj]
      
-        ax1.plot(s,y, style)
+        ax1.plot(s,y, style, label=label)
         ax2.plot(s,th, style)   
         ax3.plot(s,tha,style)
         ax4.plot(s,v,  style)
@@ -138,6 +138,12 @@ def plot_timeseries_results(trajs, styles, filename = None):
     ax6.yaxis.tick_right()
     ax7.yaxis.tick_right()
 
+    for ax in [ax1, ax2, ax3, ax4, ax5, ax6, ax7]:
+        ax.grid(True)
+
+    handles, labels = ax1.get_legend_handles_labels()
+    fig.legend(handles, labels, loc = 'upper left', fontsize = 8)
+
     if filename is not None:
         plt.savefig(filename)
     #plt.show()
@@ -145,8 +151,8 @@ def plot_timeseries_results(trajs, styles, filename = None):
     #plt.tight_layout()
       
 
-plot_timeseries_results([stanley_traj, pmpc_traj, mpc_traj], [':r', '--g', 'b'], filename = 'barc3d/results/test2.png')
-
+#plot_timeseries_results([stanley_traj, pmpc_traj, mpc_traj], [':r', '--g', 'b'], filename = 'barc3d/results/test2.png')
+plot_timeseries_results([pid_traj, stanley_traj, pmpc_traj, mpc_traj], [':y', ':r', '--g', 'b'], ['PID', 'Stanley', 'Planar MPC', 'Nonplanar MPC'],filename = 'barc3d/results/test3.png')
 fig = plt.figure()
 
 plot_solve_time(pmpc_traj)
