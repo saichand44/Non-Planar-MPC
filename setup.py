@@ -13,7 +13,7 @@ setup(
                       'matplotlib>=3.1.2',
                       'scipy>=1.4.1',
                       'sympy>=1.6.2',
-                      'casadi>=3.5.1',
+                      'casadi==3.5.5',
                       'imgui',
                       'numpy-stl',
                       'glfw',

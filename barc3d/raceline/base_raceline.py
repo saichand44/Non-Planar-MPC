@@ -5,6 +5,7 @@ from abc import abstractmethod, ABC
 from dataclasses import dataclass, field
 import numpy as np
 import casadi as ca
+import scipy
 import scipy.interpolate
 import time
 import matplotlib.pyplot as plt
@@ -58,7 +59,7 @@ class RacelineResults(PythonMsg):
     z_interp: ca.Function = field(default = None)
     u_interp: ca.Function = field(default = None)
     du_interp: ca.Function = field(default = None)
-    g_interp: scipy.interpolate._interpolate.interp1d = field(default = None)
+    g_interp: scipy.interpolate.interpolate.interp1d = field(default = None)
 
 class BaseRaceline(ABC):
     ''' base raceline class '''

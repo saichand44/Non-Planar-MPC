@@ -6,6 +6,7 @@ import numpy as np
 import copy
 import sys
 
+
 import casadi as ca
 from barc3d.utils.ca_utils import ca_abs
 

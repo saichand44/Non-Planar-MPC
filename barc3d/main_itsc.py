@@ -148,6 +148,8 @@ plot_solve_time(mpc_traj)
 plt.legend(('Planar','Nonplanar'))
 plt.tight_layout()
 
+# save plots in results folder
+plt.savefig('barc3d/results/test.png')
 
 plt.show()
 
