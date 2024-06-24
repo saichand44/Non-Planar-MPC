@@ -80,9 +80,10 @@ def plot_solve_time(traj, ax = None):
     plt.xlabel(r'$s$')
     plt.ylabel('Solve Time (ms)')
     
-def plot_timeseries_results(trajs, styles):
-    plt.figure()     
-    gs1 = gridspec.GridSpec(7, 1)
+def plot_timeseries_results(trajs, styles, filename = None):
+    fig = plt.figure(constrained_layout=True, figsize=(10, 10))
+    #plt.figure()     
+    gs1 = gridspec.GridSpec(7, 1, figure=fig)
     gs1.update(wspace=0.025, hspace=0.1) # set the spacing between axes. 
     
     ax1 = plt.subplot(gs1[0])
@@ -136,10 +137,15 @@ def plot_timeseries_results(trajs, styles):
     ax5.yaxis.tick_right()
     ax6.yaxis.tick_right()
     ax7.yaxis.tick_right()
-    plt.tight_layout()
+
+    if filename is not None:
+        plt.savefig(filename)
+    #plt.show()
+
+    #plt.tight_layout()
       
 
-plot_timeseries_results([stanley_traj, pmpc_traj, mpc_traj], [':r', '--g', 'b'])
+plot_timeseries_results([stanley_traj, pmpc_traj, mpc_traj], [':r', '--g', 'b'], filename = 'barc3d/results/test2.png')
 
 fig = plt.figure()
 
