@@ -1,3 +1,6 @@
+Work on top of Thomas Fork projects.
+Python 3.7
+
 # Nonplanar Vehicle Control
 Modeling and control of vehicles on nonplanar surfaces. 
 
