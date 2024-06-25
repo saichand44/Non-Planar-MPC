@@ -49,7 +49,7 @@ def run_solo_lap(controller, simulator, surf, figure = None, plot = False, lap =
                 sys.stdout.write("\033[K") # clear line
                 sys.stdout.write("\033[F") # Cursor up one line
                 sys.stdout.write("\033[K") # clear line
-            print('Lap %s   Contact: %s'%(lap, 'OK  ' if state.fb.f3 >0 else 'LOST'))
+            print('Lap %s   Contact: %s   f3: %s'%(lap, 'OK  ' if state.fb.f3 >0 else 'LOST', state.fb.f3))
             print('Vehicle @ %8.2f/%8.2f'%(state.p.s, surf.s_max(0)-5))
             print('Running @ %8.2fHz (avg: %8.2fHz)'%(1/(tf-ts), 1/avg_dt))    #NOTE: the frequency here is for the whole simulation, not just the controller solve time. 
         
