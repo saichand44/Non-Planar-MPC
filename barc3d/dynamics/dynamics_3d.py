@@ -547,13 +547,15 @@ class KinematicBicyclePlanar(KinematicBicycle3D):
         v1 = ca.cos(beta) * v
         v2 = ca.sin(beta) * v
         w3 = v * ca.cos(beta) / (config.lr + config.lf) * ca.tan(uy)
+
+        ## no ev = self.__eval__vel(v1,v2,w3) because we are not using the full 3D model
         
-        # pose evolution
+        # pose evolution instead
         s_dot = (v1 * ca.cos(ths) - v2 * ca.sin(ths)) / (1- kappa * y)
         y_dot =  v1 * ca.sin(ths) + v2 * ca.cos(ths)
         ths_dot = w3 - kappa * s_dot
         
-        # velocity evolution
+        # velocity evolution (in 3D + ad + ag), ad, ag computed with ev[Fd], ev[Fg]
         v_dot = ua
         
         # state evolution

@@ -267,6 +267,57 @@ class VehicleConfig(PythonMsg):
     def __post_init__(self):
         if self.tire is None: self.tire = TireConfig()
 
+
+@dataclass
+class VehicleConfig1_5(PythonMsg):
+    dt :float = field(default =    0.10)    # simulation interval
+    m  :float = field(default = ...)     # vehicle mass in kg
+    g  :float = field(default =    9.81)    # gravitational acceleration
+    lf :float = field(default =    0.2735)   # distance from COM to front axle
+    lr :float = field(default =    0.2585)   # distance from COM to rear axle
+    tf :float = field(default =    0.165)   # disance from COM to left/right front wheels
+    tr :float = field(default =    0.165)   # disance from COM to left/right rear wheels
+    h  :float = field(default =    0.1875)   # distance from road surface to COM
+
+    bf : float = field(default =   0.4635)     # distance from COM to front bumper
+    br : float = field(default =   0.4585)     # distance from COM to rear bumper
+
+    I1: float = field(default =  ...)     # roll inertia  (w1)
+    I2: float = field(default = ...)     # pitch inertia (w2) (estimated)
+    I3: float = field(default = ...)     # yaw inertia   (w3)
+
+    c1: float = field(default =    0.0)     # longitudinal drag coefficient Fd1 = -c1 * v1 * abs(v1)
+    c2: float = field(default =    0.0)     # transverse   drag coefficient Fd2 = -c2 * v2 * abs(v2)
+    c3: float = field(default =    0.0)     # downforce    drag coefficient Fd3 = -c3 * v1**2
+
+    a_max: float = field(default = ...)      # maximum acceleration
+    a_min: float = field(default = ...)     # minimum acceleration
+    y_max: float = field(default = ...)     # maximum steering angle
+    y_min: float = field(default = ...)    # minimum steering angle
+
+    da_max: float = field(default = ...)     # max acceleration rate of change
+    da_min: float = field(default =...)     # min acceleration rate of change
+    dy_max: float = field(default = ...)
+    dy_min: float = field(default =...)
+
+    N_max: float = field(default = ...)
+
+    tire: TireConfig = field(default = None)
+
+    # in initial dynamics formulations, the parametric surface was not treated as the road surface
+    # but one containing the vehicle center of mass.
+    # For legacy support thereof, set the below to False
+    # major effects when True:
+    #  1. vehicle state p.n = h
+    #  2. road surface texture is not offset by -h
+    #  3. dynamics models factor in ca.inv(I - nII) rather than ca.inv(I)
+    road_surface: bool = field(default = True)
+
+
+
+    def __post_init__(self):
+        if self.tire is None: self.tire = TireConfig()
+
 @dataclass
 class VehicleConfig1_10(PythonMsg):  
     # F1Tenth parameters

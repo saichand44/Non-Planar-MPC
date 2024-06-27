@@ -30,7 +30,7 @@ dt = 0.05
 
 track_list = get_available_surfaces()
 print(track_list)
-track_test = ['single_bump']
+track_test = ['single_bump', "l_track", "l_3d"]
 for track in track_test:
     surface_name = track.split('.')[0]
 #surface_name = 'itsc'
