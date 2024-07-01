@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 import numpy as np
 import copy
 import sys
+import matplotlib.pyplot as plt 
 
 
 import casadi as ca
@@ -132,7 +133,18 @@ class TireConfig(PythonMsg):
 
         Fx  = Fx0 * Gxa
         Fy  = Fy0 * Gys
+
         return Fx,Fy
+    
+    def forces(self, s, a, N):
+        Fx, Fy = self.combined_slip_forces(s, a, N)
+        fFx = ca.Function('Fx', [s,a,N], [Fx])
+        fFy = ca.Function('Fy', [s,a,N], [Fy])
+    
+        return fFx, fFy
+    
+
+    
     
     def _sigma_alpha(self, w, y, v1,v2,v3,w1,w2,w3,x1,x2,x3):
     
@@ -603,3 +615,40 @@ class VehicleState(PythonMsg):
         if self.trl is None: self.trl = TireState()
         return
 
+def plot_vehicle_state(states, ax = None):
+    if ax is None:
+        fig, ax = plt.subplots(1,1)
+    for state in states:
+        x = state.x.xi
+        y = state.x.xj
+        q = state.q
+        ax.plot(x,y,'o', color = 'black')
+        ax.quiver(x,y, q.e1()[0], q.e1()[1], color = 'red')
+        ax.quiver(x,y, q.e2()[0], q.e2()[1], color = 'green')
+    return ax
+
+def plot_pacjeka_tire_forces():
+    tire = TireConfig()
+
+    # normal force
+    N = 1000
+    slip_angles = 0.05
+    slip_ratios = np.linspace(-1, 1, 400)
+    long_forces = []
+    lat_forces = []
+
+    for a in slip_angles:
+        Fx, Fy = tire.combined_slip_forces(slip_ratios, slip_angles, N)
+        long_forces.append(Fx)
+        lat_forces.append(Fy)
+    
+    plt.figure(figsize=(10,5))
+    plt.subplot(1,2,1)
+    plt.plot(slip_ratios, long_forces, label = 'Longitudinal Force')    
+    plt.title('Longitudinal Force vs Slip Ratio')
+    plt.xlabel('Slip Ratio')
+    plt.ylabel('Force [N]')
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    plt.show()

@@ -11,7 +11,7 @@ import matplotlib
 
 use_glumpy_fig = False  # legacy figure
 
-from barc3d.pytypes import VehicleState, VehicleConfig, VehicleConfig1_10
+from barc3d.pytypes import VehicleState, VehicleConfig, VehicleConfig1_10, plot_pacjeka_tire_forces, plot_vehicle_state
 from barc3d.surfaces import load_surface, get_available_surfaces
 from barc3d.surfaces.tait_bryan_surface import TaitBryanAngleSurface
 from barc3d.dynamics.dynamics_3d import KinematicBicycle3D, KinematicBicyclePlanar
@@ -182,6 +182,7 @@ for track in track_test:
     plt.savefig(f'barc3d/results/solving_time_{surface_name}_v{speed_plot}.png')
 
     #plt.show()
+
 
     figure.close()  # makes sure the second process stops
 
