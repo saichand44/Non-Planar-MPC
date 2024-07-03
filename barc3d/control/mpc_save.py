@@ -12,16 +12,14 @@ from barc3d.pytypes import PythonMsg, VehicleState
 from barc3d.control.base_controller import BaseController
 from barc3d.dynamics.dynamics_3d import DynamicsModel
 
+
 @dataclass
 class NonplanarMPCConfig(PythonMsg):
     N:  int      = field(default = 20)
-    Q_4:  np.array = field(default = 100*np.diag([0,1,1,1]))
+    Q:  np.array = field(default = 100*np.diag([0,1,1,1]))
     R:  np.array = field(default = 0.0 * np.eye(2))
     dR: np.array = field(default = .1* np.eye(2))
-    P_4:  np.array = field(default = 100*np.diag([0,1,1,1]))
-
-    Q_6:  np.array = field(default = 100*np.diag([0,1,1,1,1,1]))
-    P_6:  np.array = field(default = 100*np.diag([0,1,1,1,1,1]))
+    P:  np.array = field(default = 100*np.diag([0,1,1,1]))
     
     dt:  float = field(default = 0.05)  # simulation time step and time between sucessive calls of MPC
     dtp: float = field(default = 0.05)  # time step for MPC prediction, not the frequency of the controller
@@ -59,32 +57,25 @@ class NonplanarMPCConfig(PythonMsg):
     recompile:  bool = field(default = False) 
 
 class NonplanarMPC(BaseController):
+    
     def __init__(self, model: DynamicsModel, config: NonplanarMPCConfig = NonplanarMPCConfig()):
-        self.model = model
+        if not model.f_zdot.size_in(0)[0] == 4:
+            raise NotImplementedError('MPC not implemented for state dimension %d' %model.dim_z)
+        
         self.config = config
-        self.build_mpc()
+        self.model = model
+        self.build_mpc_delta()   
         if not self.config.use_planar:
             self.build_mpc_planner()
             self.vref = self.config.vref
         return
-    
-    def build_mpc(self):
-        if self.model.f_zdot.size_in(0)[0] == 4:
-            self.build_mpc_kinematic()
-        elif self.model.f_zdot.size_in(0)[0] == 6:
-            self.build_mpc_dynamic()
-        else:
-            raise NotImplementedError('Model not supported, state space error %d' % self.model.f_zdot.size_in(0)[0])
-    
+        
     
     def step(self, state:VehicleState):
         
         z0, u0 = self.model.state2zu(state)
         
-        if self.model.f_zdot.size_in(0)[0] == 4:
-            zref =  [0, self.config.yref, 0, self.config.vref]
-        elif self.model.f_zdot.size_in(0)[0] == 6:
-            zref =  [0, self.config.yref, 0, self.config.vref, 0, 0]
+        zref =  [0, self.config.yref, 0, self.config.vref]
         
         duref = [0,0]
         
@@ -107,7 +98,8 @@ class NonplanarMPC(BaseController):
                           lbg = self.solver_lbg, 
                           ubg = self.solver_ubg, 
                           p = z0+u0+zref+duref)  
-           
+        
+                                
             
         tf = time.time()
         
@@ -144,16 +136,9 @@ class NonplanarMPC(BaseController):
         self.predicted_x = np.array(x).squeeze()
         return
     
-    def build_mpc_kinematic(self):
-
-        self.F = self.model.get_RK4_dynamics(dt = self.config.dtp, steps = self.config.M) #diff between kinematic and dynamic ?
-        self.build_mpc_delta(4)  #diff between kinematic and dynamic ?
-
-    def build_mpc_dynamic(self):
-        self.F = self.model.get_RK4_dynamics(dt = self.config.dtp, steps = self.config.M)  #diff between kinematic and dynamic ?
-        self.build_mpc_delta(6)  #diff between kinematic and dynamic ?
     
-    def build_mpc_delta(self, state_size):
+    
+    def build_mpc_delta(self):
         '''
         sets up an mpc problem but with delta formulation in the input
         this helps with going up steep hills, where an affine input is necessary
@@ -164,7 +149,7 @@ class NonplanarMPC(BaseController):
         it is recommended that R << dR
         '''
         
-        # self.F = self.model.get_RK4_dynamics(dt = self.config.dtp, steps = self.config.M)
+        self.F = self.model.get_RK4_dynamics(dt = self.config.dtp, steps = self.config.M)
         
         z_size = self.F.size_in(0)
         u_size = self.F.size_in(1)
@@ -178,21 +163,11 @@ class NonplanarMPC(BaseController):
         g = []       # nonlinear constraint functions
         lbg = []
         ubg = []
-
-        if state_size == 4:
-            Q = self.config.Q_4
-            P = self.config.P_4
-            zl = [self.config.s_min, self.config.y_min, self.config.ths_min, self.config.V_min]
-            zu = [self.config.s_max, self.config.y_max, self.config.ths_max, self.config.V_max]
-        elif state_size == 6:
-            Q = self.config.Q_6
-            P = self.config.P_6
-            zl = [self.config.s_min, self.config.y_min, self.config.ths_min, self.config.V_min, -1, -1] # add normal force and lateral force
-            zu = [self.config.s_max, self.config.y_max, self.config.ths_max, self.config.V_max, 1, 1] # add normal force and lateral force
         
         
-        
-        zg  = [0] * self.F.size1_in(0) 
+        zl = [self.config.s_min, self.config.y_min, self.config.ths_min, self.config.V_min]
+        zu = [self.config.s_max, self.config.y_max, self.config.ths_max, self.config.V_max]
+        zg  = [0] * self.F.size1_in(0)
         
         ul = [self.config.ua_min, self.config.uy_min]
         uu = [self.config.ua_max, self.config.uy_max]
@@ -244,9 +219,9 @@ class NonplanarMPC(BaseController):
             
             # penalize input, input delta, and new state
             if k == self.config.N - 1:
-                J += ca.bilin(P,  znew-zref, znew-zref)
+                J += ca.bilin(self.config.P,  znew-zref, znew-zref)
             else:
-                J += ca.bilin(Q,  znew-zref, znew-zref)
+                J += ca.bilin(self.config.Q,  znew-zref, znew-zref)
             
                 
             J += ca.bilin(self.config.R,  u,         u)
@@ -360,7 +335,7 @@ class NonplanarMPC(BaseController):
         self.planner_ubx = ubw
         self.planner_lbg = lbg
         self.planner_ubg = ubg
-
+        
         
         
     
@@ -380,5 +355,5 @@ class NonplanarMPC(BaseController):
         load_name = './' + compiledname
         solver = ca.nlpsol('solver','ipopt',load_name,opts)
         return solver
-
-
+        
+        

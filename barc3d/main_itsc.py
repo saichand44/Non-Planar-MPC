@@ -14,10 +14,11 @@ use_glumpy_fig = False  # legacy figure
 from barc3d.pytypes import VehicleState, VehicleConfig, VehicleConfig1_10, plot_pacjeka_tire_forces, plot_vehicle_state
 from barc3d.surfaces import load_surface, get_available_surfaces
 from barc3d.surfaces.tait_bryan_surface import TaitBryanAngleSurface
-from barc3d.dynamics.dynamics_3d import KinematicBicycle3D, KinematicBicyclePlanar
+from barc3d.dynamics.dynamics_3d import KinematicBicycle3D, KinematicBicyclePlanar, DynamicBicycle3D, DynamicTwoTrack3D, DynamicTwoTrackSlipInput3D
 from barc3d.control.pid import PIDController, PIDConfig
 from barc3d.control.simple_stanley_pid import SimpleStanleyPIDController, StanleyConfig
 from barc3d.control.mpc import NonplanarMPC, NonplanarMPCConfig
+
 if use_glumpy_fig: # importing both together can cause errors
     from barc3d.visualization.glumpy_fig import GlumpyFig
 else:
@@ -30,7 +31,7 @@ dt = 0.05
 
 track_list = get_available_surfaces()
 print(track_list)
-track_test = ['single_bump', "l_track", "l_3d"]
+track_test = ['single_bump']
 for track in track_test:
     surface_name = track.split('.')[0]
 #surface_name = 'itsc'
@@ -45,12 +46,18 @@ for track in track_test:
 
     nonplanar_model = simulator
     planar_model = KinematicBicyclePlanar(vehicle_config = vehicle_config, surf = surf)
+    dynamic_model = DynamicBicycle3D(vehicle_config = vehicle_config, surf = surf)
 
     state = VehicleState()
     controller          = PIDController(                                 PIDConfig(dt = simulator.dt,     vref = vref,yref = yref))
     stanley_controller  = SimpleStanleyPIDController(                    StanleyConfig(dt = simulator.dt, vref = vref,yref = yref))
     mpc                 = NonplanarMPC(model = nonplanar_model, config = NonplanarMPCConfig(dt = simulator.dt, use_planar = False, vref = vref,yref = yref))
     pmpc                = NonplanarMPC(model = planar_model,    config = NonplanarMPCConfig(dt = simulator.dt, use_planar = True,  vref = vref,yref = yref))
+
+    # Dynamic Controller
+    pid = PIDController(PIDConfig(dt = simulator.dt, vref = vref, yref = yref))
+    stanley = SimpleStanleyPIDController(StanleyConfig(dt = simulator.dt, vref = vref, yref = yref))
+    pmpc_dyna = NonplanarMPC(model = dynamic_model, config = NonplanarMPCConfig(dt = simulator.dt, use_planar = True, vref = vref, yref = yref))
 
 
     if use_glumpy_fig:
@@ -72,6 +79,10 @@ for track in track_test:
     stanley_traj = run_solo_lap(stanley_controller, simulator, surf, figure = figure, plot = True, lap = 'stanley')
     pmpc_traj    = run_solo_lap(pmpc,               simulator, surf, figure = figure, plot = True, lap = 'planar mpc')
     mpc_traj     = run_solo_lap(mpc,                simulator, surf, figure = figure, plot = True, lap = 'nonplanar mpc')
+
+    pid_dyna_traj     = run_solo_lap(pid, dynamic_model, surf, figure = figure, plot = True, lap = 'pid_dyna')
+    stanley_dyna_traj = run_solo_lap(stanley, dynamic_model, surf, figure = figure, plot = True, lap = 'stanley_dyna')
+    pmpc_dyna_traj    = run_solo_lap(pmpc_dyna, dynamic_model, surf, figure = figure, plot = True, lap = 'planar mpc_dyna')
 
     # save trajectories:
     pkl.dump(pid_traj,     open(f'barc3d/results/trajectories/pid_{surface_name}_{speed_plot}.pkl', 'wb'))

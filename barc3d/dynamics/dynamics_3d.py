@@ -419,6 +419,10 @@ class KinematicBicycle3D(DynamicsModel):
         # state evolution
         z = ca.vertcat(s,y,ths,v)
         u = ca.vertcat(ua,uy)
+
+        self.dim_z = z.size()[0]
+        self.dim_u = u.size()[0]
+
         z_dot = ca.vertcat(ev['s_dot'], ev['y_dot'], ev['ths_dot'], v_dot)
         self.setup_integrator(z, u, z_dot, param_terms, f_param_terms, pose)
         
@@ -645,6 +649,9 @@ class DynamicBicycle3D(DynamicsModel):
         
         z = ca.vertcat(s,y,ths,v1,v2,w3)
         u = ca.vertcat(ua,uy)
+
+        self.dim_z = z.size()[0]
+        self.dim_u = u.size()[0]
             
         z_dot = ca.vertcat(ev['s_dot'], ev['y_dot'], ev['ths_dot'], v1_dot, v2_dot, w3_dot)
             

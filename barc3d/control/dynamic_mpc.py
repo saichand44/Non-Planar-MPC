@@ -107,7 +107,8 @@ class NonplanarMPC(BaseController):
                           lbg = self.solver_lbg, 
                           ubg = self.solver_ubg, 
                           p = z0+u0+zref+duref)  
-           
+        
+                                
             
         tf = time.time()
         
@@ -187,8 +188,8 @@ class NonplanarMPC(BaseController):
         elif state_size == 6:
             Q = self.config.Q_6
             P = self.config.P_6
-            zl = [self.config.s_min, self.config.y_min, self.config.ths_min, self.config.V_min, -1, -1] # add normal force and lateral force
-            zu = [self.config.s_max, self.config.y_max, self.config.ths_max, self.config.V_max, 1, 1] # add normal force and lateral force
+            zl = [self.config.s_min, self.config.y_min, self.config.ths_min, self.config.V_min, -np.inf, -np.inf] # add normal force and lateral force
+            zu = [self.config.s_max, self.config.y_max, self.config.ths_max, self.config.V_max, np.inf, np.inf] # add normal force and lateral force
         
         
         
@@ -244,9 +245,9 @@ class NonplanarMPC(BaseController):
             
             # penalize input, input delta, and new state
             if k == self.config.N - 1:
-                J += ca.bilin(P,  znew-zref, znew-zref)
+                J += ca.bilin(self.config.P,  znew-zref, znew-zref)
             else:
-                J += ca.bilin(Q,  znew-zref, znew-zref)
+                J += ca.bilin(self.config.Q,  znew-zref, znew-zref)
             
                 
             J += ca.bilin(self.config.R,  u,         u)
@@ -380,5 +381,4 @@ class NonplanarMPC(BaseController):
         load_name = './' + compiledname
         solver = ca.nlpsol('solver','ipopt',load_name,opts)
         return solver
-
 
