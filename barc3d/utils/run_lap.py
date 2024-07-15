@@ -25,7 +25,7 @@ def run_solo_lap(controller, simulator, surf, figure = None, plot = False, lap =
     while not done:
         ts = time.time()
         controller.step(state)
-        
+
         simulator.step(state)
         
         if plot and figure is not None:

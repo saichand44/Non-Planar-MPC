@@ -18,6 +18,7 @@ from barc3d.dynamics.dynamics_3d import KinematicBicycle3D, KinematicBicyclePlan
 from barc3d.control.pid import PIDController, PIDConfig
 from barc3d.control.simple_stanley_pid import SimpleStanleyPIDController, StanleyConfig
 from barc3d.control.mpc import NonplanarMPC, NonplanarMPCConfig
+from barc3d.control.mpc_dyna import NonplanarMPCDyna, NonplanarMPCDynaConfig
 
 if use_glumpy_fig: # importing both together can cause errors
     from barc3d.visualization.glumpy_fig import GlumpyFig
@@ -52,12 +53,13 @@ for track in track_test:
     controller          = PIDController(                                 PIDConfig(dt = simulator.dt,     vref = vref,yref = yref))
     stanley_controller  = SimpleStanleyPIDController(                    StanleyConfig(dt = simulator.dt, vref = vref,yref = yref))
     mpc                 = NonplanarMPC(model = nonplanar_model, config = NonplanarMPCConfig(dt = simulator.dt, use_planar = False, vref = vref,yref = yref))
-    pmpc                = NonplanarMPC(model = planar_model,    config = NonplanarMPCConfig(dt = simulator.dt, use_planar = True,  vref = vref,yref = yref))
+    pmpc                = NonplanarMPCDyna(model = dynamic_model,    config = NonplanarMPCDynaConfig(dt = simulator.dt, use_planar = True,  vref = vref,yref = yref))
 
     # Dynamic Controller
-    pid = PIDController(PIDConfig(dt = simulator.dt, vref = vref, yref = yref))
-    stanley = SimpleStanleyPIDController(StanleyConfig(dt = simulator.dt, vref = vref, yref = yref))
-    pmpc_dyna = NonplanarMPC(model = dynamic_model, config = NonplanarMPCConfig(dt = simulator.dt, use_planar = True, vref = vref, yref = yref))
+    #pid = PIDController(PIDConfig(dt = simulator.dt, vref = vref, yref = yref))
+    #stanley = SimpleStanleyPIDController(StanleyConfig(dt = simulator.dt, vref = vref, yref = yref))
+    
+    pmpc_dyna = NonplanarMPCDyna(model = dynamic_model, config = NonplanarMPCDynaConfig(dt = simulator.dt, use_planar = True, vref = vref, yref = yref))
 
 
     if use_glumpy_fig:
@@ -75,13 +77,13 @@ for track in track_test:
         while not figure.ready():  # wait for the figure to initialize textures
             pass
             
-    pid_traj     = run_solo_lap(controller,         simulator, surf, figure = figure, plot = True, lap = 'pid')
+    """   pid_traj     = run_solo_lap(controller,         simulator, surf, figure = figure, plot = True, lap = 'pid')
     stanley_traj = run_solo_lap(stanley_controller, simulator, surf, figure = figure, plot = True, lap = 'stanley')
     pmpc_traj    = run_solo_lap(pmpc,               simulator, surf, figure = figure, plot = True, lap = 'planar mpc')
-    mpc_traj     = run_solo_lap(mpc,                simulator, surf, figure = figure, plot = True, lap = 'nonplanar mpc')
+    mpc_traj     = run_solo_lap(mpc,                simulator, surf, figure = figure, plot = True, lap = 'nonplanar mpc') """
 
-    pid_dyna_traj     = run_solo_lap(pid, dynamic_model, surf, figure = figure, plot = True, lap = 'pid_dyna')
-    stanley_dyna_traj = run_solo_lap(stanley, dynamic_model, surf, figure = figure, plot = True, lap = 'stanley_dyna')
+    #pid_dyna_traj     = run_solo_lap(pid, dynamic_model, surf, figure = figure, plot = True, lap = 'pid_dyna')
+    #stanley_dyna_traj = run_solo_lap(stanley, dynamic_model, surf, figure = figure, plot = True, lap = 'stanley_dyna')
     pmpc_dyna_traj    = run_solo_lap(pmpc_dyna, dynamic_model, surf, figure = figure, plot = True, lap = 'planar mpc_dyna')
 
     # save trajectories:
