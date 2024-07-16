@@ -16,7 +16,7 @@ from barc3d.dynamics.dynamics_3d import DynamicsModel
 class NonplanarMPCDynaConfig(PythonMsg):
     N: int = field(default=20)
     Q_6: np.array = field(default=100 * np.diag([0, 1, 1, 1, 1, 1]))
-    R: np.array = field(default=0.0 * np.eye(2))
+    R: np.array = field(default=0.001 * np.eye(2))
     dR: np.array = field(default=0.1 * np.eye(2))
     P_6: np.array = field(default=100 * np.diag([0, 1, 1, 1, 1, 1]))
 
@@ -70,17 +70,16 @@ class NonplanarMPCDyna(BaseController):
         self.build_mpc_dynamic()
 
     def step(self, state: VehicleState):
-        z0, u0 = self.model.state2zu(state)
+        z0, u0 = self.model.state2zu(state)   
 
-        zref = [0, self.config.yref, 0, self.config.vref, 0, 0]
+        zref = [0, self.config.yref, 0, self.config.vref, 1, 1]
         duref = [0, 0]
 
-        # Print dimensions for debugging
-        print("z0:", z0)
-        print("u0:", u0)
-        print("zref:", zref)
-        print("duref:", duref)
-        print("dim z0, u0, zref, duref:", len(z0), len(u0), len(zref), len(duref))
+        # Print initial states and references for debugging
+        print("Initial state z0:", z0)
+        print("Initial input u0:", u0)
+        print("Reference state zref:", zref)
+        print("Reference input duref:", duref)
 
         t0 = time.time()
         if not self.config.use_planar:
@@ -96,30 +95,34 @@ class NonplanarMPCDyna(BaseController):
 
         p = np.concatenate((z0, u0, zref, duref))
 
-        # Print dimensions for debugging
-        """ print("p:", p)
-        print("p dimension:", p.shape)
+        # Print parameter vector p for debugging
+        print("Parameter vector p:", p)
+        print("Parameter vector dimension:", p.shape)
 
-        print("solver_x0:", self.solver_x0)
-        print("solver_x0 dimension:", len(self.solver_x0))
-        print("solver_lbx:", self.solver_lbx)
-        print("solver_lbx dimension:", len(self.solver_lbx))
-        print("solver_ubx:", self.solver_ubx)
-        print("solver_ubx dimension:", len(self.solver_ubx))
-        print("solver_lbg:", self.solver_lbg)
-        print("solver_lbg dimension:", len(self.solver_lbg))
-        print("solver_ubg:", self.solver_ubg)
-        print("solver_ubg dimension:", len(self.solver_ubg)) """
+        # Print solver input dimensions for debugging
+        print("Solver initial guess (solver_x0):", self.solver_x0)
+
+        print("Solver lower bounds (solver_lbx):", self.solver_lbx)
+
+        print("Solver upper bounds (solver_ubx):", self.solver_ubx)
+
+        print("Solver lower bounds (solver_lbg):", self.solver_lbg)
+    
+        print("Solver upper bounds (solver_ubg):", self.solver_ubg)
+   
 
         sol = self.solver(x0=self.solver_x0,
-                          lbx=self.solver_lbx,
-                          ubx=self.solver_ubx,
-                          lbg=self.solver_lbg,
-                          ubg=self.solver_ubg,
-                          p=p)
+                        lbx=self.solver_lbx,
+                        ubx=self.solver_ubx,
+                        lbg=self.solver_lbg,
+                        ubg=self.solver_ubg,
+                        p=p)
 
         tf = time.time()
         state.t_sol = tf - t0
+
+        # Print solver output for debugging
+        print("Solver OUTPUT:", sol['x']) # ISSUE HERE ALWAYS = 0
 
         state.u.a = sol['x'][2].__float__()
         state.u.y = sol['x'][3].__float__()
@@ -173,8 +176,26 @@ class NonplanarMPCDyna(BaseController):
         if state_size == 6:
             Q = self.config.Q_6
             P = self.config.P_6
-            zl = [self.config.s_min, self.config.y_min, self.config.ths_min, self.config.V_min, -1, -1]  # add normal force and lateral force
-            zu = [self.config.s_max, self.config.y_max, self.config.ths_max, self.config.V_max, 1, 1]  # add normal force and lateral force
+            zl = [self.config.s_min, self.config.y_min, self.config.ths_min, self.config.V_min, -5000, -5000]  # add normal force and lateral force
+            zu = [self.config.s_max, self.config.y_max, self.config.ths_max, self.config.V_max, 50000, 5000]  # add normal force and lateral force
+            """
+            vehicle_mass = 1500  # kg
+            gravity = 9.81  # m/s^2
+            normal_force_static = vehicle_mass * gravity / 4  # Static normal force on each wheel
+
+            # Typical coefficient of friction for tires
+            mu = 1.0  # Dry asphalt
+
+            # Dynamic load transfer (example value, this depends on vehicle dynamics)
+            dynamic_load_transfer = 0.2 * normal_force_static
+
+            # Set bounds for normal force
+            N_min = normal_force_static - dynamic_load_transfer
+            N_max = normal_force_static + dynamic_load_transfer
+
+            # Set bounds for lateral force based on friction limit
+            lateral_force_max = mu * N_max
+            """
 
         zg = [0] * z_size
 
@@ -236,6 +257,7 @@ class NonplanarMPCDyna(BaseController):
             g += [z - znew]
             ubg += [0] * z_size
             lbg += [0] * z_size
+            
 
         prob = {'f': J, 'x': ca.vertcat(*w), 'g': ca.vertcat(*g), 'p': ca.vertcat(*p)}
         opts = {'ipopt.print_level': 0, 'ipopt.sb': 'yes', 'print_time': 0}
@@ -323,11 +345,11 @@ class NonplanarMPCDyna(BaseController):
         planner = self.get_compiled_solver(prob, opts, 'planner')
 
         self.planner = planner
-        self.planner_x0 = np.zeros(len(w)).tolist()
-        self.planner_lbx = np.array(lbw).flatten().tolist()
-        self.planner_ubx = np.array(ubw).flatten().tolist()
-        self.planner_lbg = np.array(lbg).flatten().tolist()
-        self.planner_ubg = np.array(ubg).flatten().tolist()
+        self.planner_x0  = w0
+        self.planner_lbx = lbw
+        self.planner_ubx = ubw
+        self.planner_lbg = lbg
+        self.planner_ubg = ubg
 
     def get_compiled_solver(self, prob, opts, name):
         sourcename = name + '.c'

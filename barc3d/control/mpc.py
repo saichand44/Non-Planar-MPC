@@ -16,7 +16,7 @@ from barc3d.dynamics.dynamics_3d import DynamicsModel
 class NonplanarMPCConfig(PythonMsg):
     N:  int      = field(default = 20)
     Q_4:  np.array = field(default = 100*np.diag([0,1,1,1]))
-    R:  np.array = field(default = 0.0 * np.eye(2))
+    R:  np.array = field(default = 0.001 * np.eye(2))
     dR: np.array = field(default = .1* np.eye(2))
     P_4:  np.array = field(default = 100*np.diag([0,1,1,1]))
 
@@ -107,20 +107,20 @@ class NonplanarMPC(BaseController):
         
         p = np.concatenate((z0, u0, zref, duref))
         
-        print("p:", p)
-        print("p dimension:", p.shape)
+         # Print parameter vector p for debugging
+        print("Parameter vector p:", p)
+        print("Parameter vector dimension:", p.shape)
 
-        print("solver_x0:", self.solver_x0)
-        print("solver_x0 dimension:", len(self.solver_x0))
-        print("solver_lbx:", self.solver_lbx)
-        print("solver_lbx dimension:", len(self.solver_lbx))
-        print("solver_ubx:", self.solver_ubx)
-        print("solver_ubx dimension:", len(self.solver_ubx))
-        print("solver_lbg:", self.solver_lbg)
-        print("solver_lbg dimension:", len(self.solver_lbg))
-        print("solver_ubg:", self.solver_ubg)
-        print("solver_ubg dimension:", len(self.solver_ubg))
+        # Print solver input dimensions for debugging
+        print("Solver initial guess (solver_x0):", self.solver_x0)
 
+        print("Solver lower bounds (solver_lbx):", self.solver_lbx)
+
+        print("Solver upper bounds (solver_ubx):", self.solver_ubx)
+
+        print("Solver lower bounds (solver_lbg):", self.solver_lbg)
+    
+        print("Solver upper bounds (solver_ubg):", self.solver_ubg)
         sol = self.solver(x0=self.solver_x0,
                         lbx=self.solver_lbx,
                         ubx=self.solver_ubx,
@@ -130,7 +130,7 @@ class NonplanarMPC(BaseController):
         
         tf = time.time()
         state.t_sol = tf - t0
-
+        print("Solver OUTPUT:", sol['x'])
         state.u.a = sol['x'][2].__float__()
         state.u.y = sol['x'][3].__float__()
 
