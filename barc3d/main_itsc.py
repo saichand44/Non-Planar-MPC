@@ -56,8 +56,8 @@ for track in track_test:
     pmpc                = NonplanarMPCDyna(model = dynamic_model,    config = NonplanarMPCDynaConfig(dt = simulator.dt, use_planar = True,  vref = vref,yref = yref))
 
     # Dynamic Controller
-    #pid = PIDController(PIDConfig(dt = simulator.dt, vref = vref, yref = yref))
-    #stanley = SimpleStanleyPIDController(StanleyConfig(dt = simulator.dt, vref = vref, yref = yref))
+    pid = PIDController(PIDConfig(dt = dynamic_model.dt, vref = vref, yref = yref))
+    stanley = SimpleStanleyPIDController(StanleyConfig(dt = simulator.dt, vref = vref, yref = yref))
     
     pmpc_dyna = NonplanarMPCDyna(model = dynamic_model, config = NonplanarMPCDynaConfig(dt = simulator.dt, use_planar = True, vref = vref, yref = yref))
 
@@ -82,8 +82,8 @@ for track in track_test:
     pmpc_traj    = run_solo_lap(pmpc,               simulator, surf, figure = figure, plot = True, lap = 'planar mpc')
     mpc_traj     = run_solo_lap(mpc,                simulator, surf, figure = figure, plot = True, lap = 'nonplanar mpc') """
 
-    #pid_dyna_traj     = run_solo_lap(pid, dynamic_model, surf, figure = figure, plot = True, lap = 'pid_dyna')
-    #stanley_dyna_traj = run_solo_lap(stanley, dynamic_model, surf, figure = figure, plot = True, lap = 'stanley_dyna')
+    pid_dyna_traj     = run_solo_lap(pid, dynamic_model, surf, figure = figure, plot = True, lap = 'pid_dyna')
+    stanley_dyna_traj = run_solo_lap(stanley, dynamic_model, surf, figure = figure, plot = True, lap = 'stanley_dyna')
     pmpc_dyna_traj    = run_solo_lap(pmpc_dyna, dynamic_model, surf, figure = figure, plot = True, lap = 'planar mpc_dyna')
 
     # save trajectories:
