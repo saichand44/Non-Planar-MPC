@@ -111,16 +111,7 @@ class NonplanarMPC(BaseController):
         print("Parameter vector p:", p)
         print("Parameter vector dimension:", p.shape)
 
-        # Print solver input dimensions for debugging
-        print("Solver initial guess (solver_x0):", self.solver_x0)
-
-        print("Solver lower bounds (solver_lbx):", self.solver_lbx)
-
-        print("Solver upper bounds (solver_ubx):", self.solver_ubx)
-
-        print("Solver lower bounds (solver_lbg):", self.solver_lbg)
-    
-        print("Solver upper bounds (solver_ubg):", self.solver_ubg)
+       
         sol = self.solver(x0=self.solver_x0,
                         lbx=self.solver_lbx,
                         ubx=self.solver_ubx,
@@ -128,6 +119,17 @@ class NonplanarMPC(BaseController):
                         ubg=self.solver_ubg,
                         p=p)
         
+         # Print solver input dimensions for debugging
+        print("Solver initial guess (solver_x0):", self.solver_x0)
+        """ 
+        print("Solver lower bounds (solver_lbx):", self.solver_lbx)
+
+        print("Solver upper bounds (solver_ubx):", self.solver_ubx)
+
+        print("Solver lower bounds (solver_lbg):", self.solver_lbg)
+    
+        print("Solver upper bounds (solver_ubg):", self.solver_ubg) """
+
         tf = time.time()
         state.t_sol = tf - t0
         print("Solver OUTPUT:", sol['x'])

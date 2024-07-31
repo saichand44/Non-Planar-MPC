@@ -31,7 +31,6 @@ yref = 0
 dt = 0.05
 
 track_list = get_available_surfaces()
-print(track_list)
 track_test = ['single_bump']
 for track in track_test:
     surface_name = track.split('.')[0]
@@ -45,47 +44,19 @@ for track in track_test:
 
     simulator = KinematicBicycle3D(vehicle_config = vehicle_config, surf = surf)
 
-    # Models
-    """ 
-    KinematicBiczcle3D: nonplanar kinematic bicycle model. Includes state evolution based on velocity components and accounts for gravity drag forces.
-
-    KinematicBicyclePlanar: planar kinematic bicycle model. 
-
-    DynamicBicycle3D: A nonplanar dynamic bicycle model with static weight distribution and simplified longitudinal dynamics. It includes quasistatic loading and tire forces.
-
-    DynamicTwoTrack3D: A nonplanar dynamic two-track model with dynamic weight distribution and tire angular velocity states. 
-
-    DynamicTwoTrackSlipInput3D: A nonplanar dynamic two-track model where the tire slip ratio is treated as an input. This model is always set up as a DAE (Differential Algebraic Equation).
-    """
     nonplanar_model = simulator
     planar_model = KinematicBicyclePlanar(vehicle_config = vehicle_config, surf = surf)
     dynamic_model = DynamicBicycle3D(vehicle_config = vehicle_config, surf = surf)
-    dyna_two_track = DynamicTwoTrack3D(vehicle_config = vehicle_config, surf = surf)
-    dyna_two_track_slip = DynamicTwoTrackSlipInput3D(vehicle_config = vehicle_config, surf = surf)
+    
+    
 
     # Controllers
     state = VehicleState()
 
-    pid_kinematic = PIDController(PIDConfig(dt=simulator.dt, vref=vref, yref=yref))
-    pid_dynamic = PIDController(PIDConfig(dt=dynamic_model.dt, vref=vref, yref=yref))
-    stanley_kinematic = SimpleStanleyPIDController(StanleyConfig(dt=simulator.dt, vref=vref, yref=yref))
-    stanley_dynamic = SimpleStanleyPIDController(StanleyConfig(dt=dynamic_model.dt, vref=vref, yref=yref))
-    mpc_planar = NonplanarMPC(model=planar_model, config=NonplanarMPCConfig(dt=simulator.dt, use_planar=True, vref=vref, yref=yref))
+
     mpc_nonplanar_kinematic = NonplanarMPC(model=nonplanar_model, config=NonplanarMPCConfig(dt=simulator.dt, use_planar=False, vref=vref, yref=yref))
-    mpc_nonplanar_dynamic = NonplanarMPCDyna(model=dynamic_model, config=NonplanarMPCDynaConfig(dt=dynamic_model.dt, use_planar=True, vref=vref, yref=yref))
-    
+    dynamic_mpc = NonplanarMPCDyna(model=dynamic_model, config=NonplanarMPCDynaConfig(dt=dynamic_model.dt, use_planar=False, vref=vref, yref=yref))
 
-    controller          = PIDController(                                 PIDConfig(dt = simulator.dt,     vref = vref,yref = yref))
-    stanley_controller  = SimpleStanleyPIDController(                    StanleyConfig(dt = simulator.dt, vref = vref,yref = yref))
-    mpc                 = NonplanarMPC(model = nonplanar_model, config = NonplanarMPCConfig(dt = simulator.dt, use_planar = False, vref = vref,yref = yref))
-    pmpc                = NonplanarMPCDyna(model = dynamic_model,    config = NonplanarMPCDynaConfig(dt = simulator.dt, use_planar = True,  vref = vref,yref = yref))
-
-    # Dynamic Controller
-    pid = PIDController(PIDConfig(dt = dynamic_model.dt, vref = vref, yref = yref))
-    stanley = SimpleStanleyPIDController(StanleyConfig(dt = simulator.dt, vref = vref, yref = yref))
-    pmpc_kine = NonplanarMPC(model = planar_model, config = NonplanarMPCConfig(dt = simulator.dt, use_planar = False, vref = vref, yref = yref))
-    pmpc_dyna = NonplanarMPCDyna(model = dynamic_model, config = NonplanarMPCDynaConfig(dt = dynamic_model.dt, use_planar = True, vref = vref, yref = yref))
-    
 
     if use_glumpy_fig:
         if GlumpyFig.available():
@@ -101,33 +72,9 @@ for track in track_test:
     if figure is not None:
         while not figure.ready():  # wait for the figure to initialize textures
             pass
-            
-    """   pid_traj     = run_solo_lap(controller,         simulator, surf, figure = figure, plot = True, lap = 'pid')
-    stanley_traj = run_solo_lap(stanley_controller, simulator, surf, figure = figure, plot = True, lap = 'stanley')
-    pmpc_traj    = run_solo_lap(pmpc,               simulator, surf, figure = figure, plot = True, lap = 'planar mpc')
-    mpc_traj     = run_solo_lap(mpc,                simulator, surf, figure = figure, plot = True, lap = 'nonplanar mpc') """
-
-    pid_dyna_traj     = run_solo_lap(pid, dynamic_model, surf, figure = figure, plot = True, lap = 'pid_dyna')
-    stanley_dyna_traj = run_solo_lap(stanley, dynamic_model, surf, figure = figure, plot = True, lap = 'stanley_dyna')
-    mpc_nonplanar_kinematic = run_solo_lap(mpc_nonplanar_kinematic, nonplanar_model, surf, figure = figure, plot = True, lap = 'nonplanar mpc_kinematic')
-    pmpc_dyna_traj    = run_solo_lap(pmpc_dyna, dynamic_model, surf, figure = figure, plot = True, lap = 'planar mpc_dyna')
-
-    # save trajectories:
-    pkl.dump(pid_traj,     open(f'barc3d/results/trajectories/pid_{surface_name}_{speed_plot}.pkl', 'wb'))
-    pkl.dump(stanley_traj, open(f'barc3d/results/trajectories/stanley_{surface_name}_{speed_plot}.pkl', 'wb'))
-    pkl.dump(pmpc_traj,    open(f'barc3d/results/trajectories/pmpc_{surface_name}_{speed_plot}.pkl', 'wb'))
-    pkl.dump(mpc_traj,     open(f'barc3d/results/trajectories/mpc_{surface_name}_{speed_plot}.pkl', 'wb'))
-
-
-    ts = np.mean(np.array([s.t_sol*1000 for s in pmpc_traj]))
-    print('Avg planar mpc solve time: %0.3f'%ts)
-    ts = np.mean(np.array([s.t_sol*1000 for s in mpc_traj]))
-    print('Avg nonplanar mpc solve time: %0.3f'%ts)
-
-
-    matplotlib.rcParams['mathtext.fontset'] = 'cm'
-    matplotlib.rcParams.update({'font.size': 18})
-    #matplotlib.rcParams['text.latex.preamble']=[r"\usepackage{amsmath}"]
+   
+    kine_mpc_traj = run_solo_lap(mpc_nonplanar_kinematic, nonplanar_model, surf, figure = figure, plot = True, lap = 'nonplanar mpc_kinematic')
+    dyna_mpc_traj = run_solo_lap(dynamic_mpc, dynamic_model, surf, figure = figure, plot = True, lap = 'planar mpc_dyna')
 
         
     def plot_solve_time(traj, ax = None):
@@ -205,22 +152,6 @@ for track in track_test:
             plt.savefig(filename)
         #plt.show()
 
-        #plt.tight_layout()
-        
-    # Plot with or without PID: 
-    #plot_timeseries_results([stanley_traj, pmpc_traj, mpc_traj], [':r', '--g', 'b'], filename = 'barc3d/results/test2.png')
-    plot_timeseries_results([pid_traj, stanley_traj, pmpc_traj, mpc_traj], [':y', ':r', '--g', 'b'], ['PID', 'Stanley', 'Planar MPC', 'Nonplanar MPC'],filename = f'barc3d/results/traj_{surface_name}_v{speed_plot}.png')
-    fig = plt.figure()
-
-    plot_solve_time(pmpc_traj)
-    plot_solve_time(mpc_traj)
-    plt.legend(('Planar','Nonplanar'))
-    plt.tight_layout()
-
-    # save plots in results folder
-    plt.savefig(f'barc3d/results/solving_time_{surface_name}_v{speed_plot}.png')
-
-    #plt.show()
 
 
     figure.close()  # makes sure the second process stops

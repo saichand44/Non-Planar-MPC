@@ -70,16 +70,20 @@ class NonplanarMPCDyna(BaseController):
         self.build_mpc_dynamic()
 
     def step(self, state: VehicleState):
-        z0, u0 = self.model.state2zu(state)   
+        z0, u0 = self.model.state2zu(state)  
+        if z0 == [0, 0, 0, 0, 0, 0]:
+            z0 = [0.1, 0.1, 0.1, 0.1, 0.1, 0.1]  
+
+        if u0 == [0, 0]:
+            u0 = [10.0, 0.0]
+        print("Debug - z0:", z0)
+        print("Debug - u0:", u0) 
+ 
+        """  if u0 == [0, 0]:
+            u0 = [0.1, 0.1] """
 
         zref = [0, self.config.yref, 0, self.config.vref, 1, 1]
         duref = [0, 0]
-
-        # Print initial states and references for debugging
-        print("Initial state z0:", z0)
-        print("Initial input u0:", u0)
-        print("Reference state zref:", zref)
-        print("Reference input duref:", duref)
 
         t0 = time.time()
         if not self.config.use_planar:
@@ -88,7 +92,8 @@ class NonplanarMPCDyna(BaseController):
                                 ubx=self.planner_ubx,
                                 lbg=self.planner_lbg,
                                 ubg=self.planner_ubg,
-                                p=np.concatenate((z0, u0, [self.vref])))
+                                #p = np.concatenate((z0[:4], u0, [self.vref])))
+                                p = np.concatenate((z0, [self.vref])))
             self.planner_x0 = plan['x']
             zref[3] = float(plan['x'][0])
             self.vref = zref[3]
@@ -99,24 +104,32 @@ class NonplanarMPCDyna(BaseController):
         print("Parameter vector p:", p)
         print("Parameter vector dimension:", p.shape)
 
-        # Print solver input dimensions for debugging
-        print("Solver initial guess (solver_x0):", self.solver_x0)
-
-        print("Solver lower bounds (solver_lbx):", self.solver_lbx)
-
-        print("Solver upper bounds (solver_ubx):", self.solver_ubx)
-
-        print("Solver lower bounds (solver_lbg):", self.solver_lbg)
-    
-        print("Solver upper bounds (solver_ubg):", self.solver_ubg)
+        
    
-
+        print("Solver initial guess (solver_x0):", self.solver_x0)
         sol = self.solver(x0=self.solver_x0,
                         lbx=self.solver_lbx,
                         ubx=self.solver_ubx,
                         lbg=self.solver_lbg,
                         ubg=self.solver_ubg,
                         p=p)
+        
+        stats = self.solver.stats()
+        print("Solver Status:", stats['return_status'])  # Solution status
+        print("Number of Iterations:", stats['iter_count'])  # Number of iterations
+
+
+        
+        # Print solver input dimensions for debugging
+        #print("Solver initial guess (solver_x0):", self.solver_x0)
+
+        """ print("Solver lower bounds (solver_lbx):", self.solver_lbx)
+
+        print("Solver upper bounds (solver_ubx):", self.solver_ubx)
+
+        print("Solver lower bounds (solver_lbg):", self.solver_lbg)
+    
+        print("Solver upper bounds (solver_ubg):", self.solver_ubg) """
 
         tf = time.time()
         state.t_sol = tf - t0
@@ -126,6 +139,7 @@ class NonplanarMPCDyna(BaseController):
 
         state.u.a = sol['x'][2].__float__()
         state.u.y = sol['x'][3].__float__()
+        print("Debug - Updated control inputs: a = {}, y = {}".format(state.u.a, state.u.y))
 
         if self.config.use_planar:
             state.u.a += state.q.e1()[2].__float__() * 9.81
@@ -270,7 +284,7 @@ class NonplanarMPCDyna(BaseController):
         self.solver_ubx = np.array(ubw).flatten().tolist()  # Upper bounds for decision variables
         self.solver_lbg = np.array(lbg).flatten().tolist()  # Lower bounds for constraints
         self.solver_ubg = np.array(ubg).flatten().tolist()  # Upper bounds for constraints """
-
+        print("Debug - w0:", w0)
         self.solver_x0 = w0
         self.solver_lbx = lbw
         self.solver_ubx = ubw
@@ -297,9 +311,13 @@ class NonplanarMPCDyna(BaseController):
         g = []  # nonlinear constraint functions
         lbg = []
         ubg = []
+        load = 0
+        lateral_slip = 0
 
         z0 = ca.MX.sym('z0', z_size)
         u0 = ca.MX.sym('u0', u_size)
+        print("z0:", z0.shape)
+        print("u0:", u0.shape)
 
         p += [z0]
         p += [u0]
@@ -320,8 +338,7 @@ class NonplanarMPCDyna(BaseController):
 
         for k in range(self.config.planner_N):
             # adjusted state variable with replanned speed and incremented path length
-            z = ca.vertcat(z0[0] + self.config.planner_ds * k, 0, 0, V)
-
+            z = ca.vertcat(z0[0] + self.config.planner_ds * k, 0, 0, V, load, lateral_slip)
             N = fN(z, [0, 0])
 
             # increment s spacing

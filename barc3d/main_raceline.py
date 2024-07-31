@@ -66,14 +66,14 @@ def main():
     vehicle_config = VehicleConfig()
 
     # the planar model comparison
-    #compare('l_track', raceline_config, vehicle_config, pyplot = True, details = True)
+    compare('l_track', raceline_config, vehicle_config, pyplot = True, details = True)
 
     # the nonplanar model comparison
     raceline_config.v0 = 40
     raceline_config.y0 = -5
     raceline_config.ths0 = 0
     raceline_config.v_ws = 40
-    compare('tube_turn', raceline_config, vehicle_config, pyplot = False, details = False, include_planar = True)
+    compare('single_bump', raceline_config, vehicle_config, pyplot = False, details = False, include_planar = True)
     
 if __name__ == '__main__':
     main()

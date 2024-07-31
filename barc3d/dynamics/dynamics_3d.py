@@ -668,6 +668,11 @@ class DynamicBicycle3D(DynamicsModel):
     def state2zu(self, state:VehicleState):
         z = [state.p.s, state.p.y, state.p.ths, state.v.v1, state.v.v2, state.w.w3]
         u = [state.u.a, state.u.y]
+
+        
+        print("debug state z: ", z)
+        print("debug state u: ", u)
+
         
         return z,u
     
