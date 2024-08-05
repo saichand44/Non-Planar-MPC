@@ -163,4 +163,7 @@ def generate_surfaces():
     
 if __name__ == '__main__':
     generate_surfaces()
+    # plot single bump surface
+    
+
     

@@ -15,10 +15,10 @@ from barc3d.dynamics.dynamics_3d import DynamicsModel
 @dataclass
 class NonplanarMPCDynaConfig(PythonMsg):
     N: int = field(default=20)
-    Q_6: np.array = field(default=100 * np.diag([0, 1, 1, 1, 1, 1]))
+    Q_6: np.array = field(default=100 * np.diag([0, 1, 1, 1, 1, 1])) # cost on state
     R: np.array = field(default=0.001 * np.eye(2))
     dR: np.array = field(default=0.1 * np.eye(2))
-    P_6: np.array = field(default=100 * np.diag([0, 1, 1, 1, 1, 1]))
+    P_6: np.array = field(default=100 * np.diag([0, 1, 1, 1, 1, 1])) # terminal cost on state (tracking error) 
 
     dt: float = field(default=0.05)  # simulation time step and time between successive calls of MPC
     dtp: float = field(default=0.05)  # time step for MPC prediction, not the frequency of the controller
