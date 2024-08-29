@@ -294,7 +294,7 @@ class VehicleConfig1_5(PythonMsg):
     bf : float = field(default =   0.4635)     # distance from COM to front bumper
     br : float = field(default =   0.4585)     # distance from COM to rear bumper
 
-    I1: float = field(default =  ...)     # roll inertia  (w1)
+    I1: float = field(default =  ...)     # roll inertia  (w1), w1 = 1/12 m (h^2 + w^2)
     I2: float = field(default = ...)     # pitch inertia (w2) (estimated)
     I3: float = field(default = ...)     # yaw inertia   (w3)
 

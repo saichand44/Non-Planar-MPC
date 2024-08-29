@@ -33,7 +33,7 @@ yref = 0
 dt = 0.05
 
 track_list = get_available_surfaces()
-track_test = ['single_bump']
+track_test = ['single_bump']#, 'twist','tube_turn', 'tube_turn_loop',  's_bend','plus_track','off_cam_turn','l_track_2','l_3d','hill_climb','chicane',   'itsc',   'l_tack']
 for track in track_test:
     surface_name = track.split('.')[0]
 
