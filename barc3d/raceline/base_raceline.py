@@ -524,7 +524,7 @@ class BaseRaceline(ABC):
                                z_interp = z_interp_np, u_interp = u_interp_np, du_interp = du_interp_np,
                                g_interp = g_interp)     
 
-    def plot_raceline_pyplot(self, results, block = True):
+    def plot_raceline_pyplot(self, results, block = True, filename=None):
         center = []
         left = []
         right = []
@@ -555,7 +555,10 @@ class BaseRaceline(ABC):
             max_v = max(max_v, v.max())
             min_v = min(min_v, v.min())
 
-        linestyles = ['solid','dashed','dotted']
+        linestyles = ['solid', 
+                      (0, (5, 5000)),  # loosely dashed
+                      (0, (1, 5000))]  # loosely dotted
+        
         for k,line in enumerate(results):
             sol_xi = np.array([state.x.xi for state in line.raceline])
             sol_xj = np.array([state.x.xj for state in line.raceline])
@@ -565,13 +568,21 @@ class BaseRaceline(ABC):
             segments = np.concatenate([points[:-1], points[1:]], axis = 1)
 
             norm = plt.Normalize(min_v, max_v)
-            lc = LineCollection(segments, cmap='plasma', norm=norm, label = '%s (%0.2fs)' %(line.label, line.time), linestyles = linestyles[k%3])
+            # lc = LineCollection(segments, cmap='plasma', norm=norm, label = '%s (%0.2fs)' %(line.label, line.time), linestyles = linestyles[k%3])
+           
+            lc = LineCollection(segments, cmap='plasma', norm=norm,
+                                label='%s (%0.2fs)' % (line.label, line.time),
+                                linestyle=linestyles[k % len(linestyles)])
+        
             lc.set_array(sol_v)
             lc.set_linewidth(2)
             line = plt.gca().add_collection(lc)
         cbar = fig.colorbar(line, ax = plt.gca())
         cbar.set_label('Vehicle Speed (m/s)')
         plt.legend()
+
+        if filename is not None:
+            plt.savefig(filename)
 
         plt.show(block = block)
         return
