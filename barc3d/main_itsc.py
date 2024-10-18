@@ -32,7 +32,7 @@ dt = 0.05
 
 track_list = get_available_surfaces()
 print(track_list)
-track_test = ['chicane100%']
+track_test = ['tube_turn_0']
 for track in track_test:
     surface_name = track.split('.')[0]
  

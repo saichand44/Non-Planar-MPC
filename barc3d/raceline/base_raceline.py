@@ -537,7 +537,7 @@ class BaseRaceline(ABC):
         left = np.array(left)
         right = np.array(right)
 
-        fig = plt.figure()
+        fig = plt.figure(figsize=(32, 16))
         plt.plot(center[:,0], center[:,1],'--r')
         plt.plot(left[:,0], left[:,1],'-k')
         plt.plot(right[:,0], right[:,1],'-k')

@@ -65,7 +65,7 @@ def main():
     vehicle_config = VehicleConfig()
 
     # the planar model comparison
-    compare('chicane_100%', raceline_config, vehicle_config, pyplot = False, details = True)
+    compare('single_bump_100%', raceline_config, vehicle_config, pyplot = False, details = False)
 
     # # the nonplanar model comparison
     # raceline_config.v0 = 40
