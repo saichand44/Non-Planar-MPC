@@ -32,7 +32,7 @@ dt = 0.05
 
 track_list = get_available_surfaces()
 print(track_list)
-track_test = ['tube_turn_0']
+track_test = ['chicane_0%']
 for track in track_test:
     surface_name = track.split('.')[0]
  
@@ -43,7 +43,7 @@ for track in track_test:
     vehicle_config = VehicleConfig(dt = dt, road_surface = False)
     #vehicle_config = VehicleConfig1_10(dt = dt, road_surface = False)
 
-    simulator = KinematicBicycle3D(vehicle_config = vehicle_config, surf = surf)
+    # simulator = KinematicBicycle3D(vehicle_config = vehicle_config, surf = surf)
 
     # Models
     """ 
@@ -57,9 +57,9 @@ for track in track_test:
 
     DynamicTwoTrackSlipInput3D: A nonplanar dynamic two-track model where the tire slip ratio is treated as an input. This model is always set up as a DAE (Differential Algebraic Equation).
     """
-    nonplanar_model = simulator
+    # nonplanar_model = simulator
     # planar_model = KinematicBicyclePlanar(vehicle_config = vehicle_config, surf = surf)
-    dynamic_model = DynamicBicycle3D(vehicle_config = vehicle_config, surf = surf)
+    # dynamic_model = DynamicBicycle3D(vehicle_config = vehicle_config, surf = surf)
     # dyna_two_track = DynamicTwoTrack3D(vehicle_config = vehicle_config, surf = surf)
     # dyna_two_track_slip = DynamicTwoTrackSlipInput3D(vehicle_config = vehicle_config, surf = surf)
 
@@ -75,8 +75,8 @@ for track in track_test:
     # mpc_nonplanar_dynamic = NonplanarMPCDyna(model=dynamic_model, config=NonplanarMPCDynaConfig(dt=dynamic_model.dt, use_planar=True, vref=vref, yref=yref))
     
 
-    controller          = PIDController(                                 PIDConfig(dt = simulator.dt,     vref = vref,yref = yref))
-    stanley_controller  = SimpleStanleyPIDController(                    StanleyConfig(dt = simulator.dt, vref = vref,yref = yref))
+    # controller          = PIDController(                                 PIDConfig(dt = simulator.dt,     vref = vref,yref = yref))
+    # stanley_controller  = SimpleStanleyPIDController(                    StanleyConfig(dt = simulator.dt, vref = vref,yref = yref))
     # mpc                 = NonplanarMPC(model = nonplanar_model, config = NonplanarMPCConfig(dt = simulator.dt, use_planar = False, vref = vref,yref = yref))
     # pmpc                = NonplanarMPCDyna(model = dynamic_model,    config = NonplanarMPCDynaConfig(dt = simulator.dt, use_planar = True,  vref = vref,yref = yref))
 
@@ -85,7 +85,16 @@ for track in track_test:
     # stanley = SimpleStanleyPIDController(StanleyConfig(dt = simulator.dt, vref = vref, yref = yref))
     # pmpc_kine = NonplanarMPC(model = planar_model, config = NonplanarMPCConfig(dt = simulator.dt, use_planar = False, vref = vref, yref = yref))
     # pmpc_dyna = NonplanarMPCDyna(model = dynamic_model, config = NonplanarMPCDynaConfig(dt = dynamic_model.dt, use_planar = True, vref = vref, yref = yref))
-    
+
+    #----------------------------------------------------------------------------------------------------------
+    # TESTING
+    # #----------------------------------------------------------------------------------------------------------
+    # dyn_3d = DynamicBicycle3D(vehicle_config = vehicle_config, surf = surf)
+    # pid_controller = PIDController(PIDConfig(dt = dyn_3d.dt, vref = vref, yref = yref))
+    # stanley_controller  = SimpleStanleyPIDController(StanleyConfig(dt = dyn_3d.dt, vref = vref,yref = yref))
+    # pmpc                = NonplanarMPCDyna(model=dynamic_model, config=NonplanarMPCDynaConfig(dt=dynamic_model.dt, use_planar=True, vref=vref, yref=yref))
+    # mpc                 = NonplanarMPCDyna(model=dynamic_model, config=NonplanarMPCDynaConfig(dt=dynamic_model.dt, use_planar=False, vref=vref, yref=yref))
+        
 
     if use_glumpy_fig:
         if GlumpyFig.available():
@@ -102,8 +111,8 @@ for track in track_test:
         while not figure.ready():  # wait for the figure to initialize textures
             pass
             
-    pid_traj     = run_solo_lap(controller,         simulator, surf, figure = figure, plot = True, lap = 'pid')
-    stanley_traj = run_solo_lap(stanley_controller, simulator, surf, figure = figure, plot = True, lap = 'stanley')
+    # pid_traj     = run_solo_lap(controller,         simulator, surf, figure = figure, plot = True, lap = 'pid')
+    # stanley_traj = run_solo_lap(stanley_controller, simulator, surf, figure = figure, plot = True, lap = 'stanley')
     # pmpc_traj    = run_solo_lap(pmpc,               simulator, surf, figure = figure, plot = True, lap = 'planar mpc')
     # mpc_traj     = run_solo_lap(mpc,                simulator, surf, figure = figure, plot = True, lap = 'nonplanar mpc')
 
@@ -112,17 +121,25 @@ for track in track_test:
     # mpc_nonplanar_kinematic = run_solo_lap(mpc_nonplanar_kinematic, nonplanar_model, surf, figure = figure, plot = True, lap = 'nonplanar mpc_kinematic')
     # pmpc_dyna_traj    = run_solo_lap(pmpc_dyna, dynamic_model, surf, figure = figure, plot = True, lap = 'planar mpc_dyna')
 
+    #----------------------------------------------------------------------------------------------------------
+    # TESTING
+    #----------------------------------------------------------------------------------------------------------
+    pid_traj     = run_solo_lap(pid_controller, dyn_3d, surf, figure = figure, plot = True, lap = 'pid')
+    stanley_traj = run_solo_lap(stanley_controller, dyn_3d, surf, figure = figure, plot = True, lap = 'stanley')
+    pmpc_traj    = run_solo_lap(pmpc, dyn_3d, surf, figure = figure, plot = True, lap = 'planar mpc')
+    mpc_traj     = run_solo_lap(mpc, dyn_3d, surf, figure = figure, plot = True, lap = 'nonplanar mpc')
+
     # save trajectories:
     pkl.dump(pid_traj,     open(f'results/trajectories/pid_{surface_name}_{speed_plot}.pkl', 'wb'))
     pkl.dump(stanley_traj, open(f'results/trajectories/stanley_{surface_name}_{speed_plot}.pkl', 'wb'))
-    # pkl.dump(pmpc_traj,    open(f'results/trajectories/pmpc_{surface_name}_{speed_plot}.pkl', 'wb'))
-    # pkl.dump(mpc_traj,     open(f'results/trajectories/mpc_{surface_name}_{speed_plot}.pkl', 'wb'))
+    pkl.dump(pmpc_traj,    open(f'results/trajectories/pmpc_{surface_name}_{speed_plot}.pkl', 'wb'))
+    pkl.dump(mpc_traj,     open(f'results/trajectories/mpc_{surface_name}_{speed_plot}.pkl', 'wb'))
 
 
-    # ts = np.mean(np.array([s.t_sol*1000 for s in pmpc_traj]))
-    # print('Avg planar mpc solve time: %0.3f'%ts)
-    # ts = np.mean(np.array([s.t_sol*1000 for s in mpc_traj]))
-    # print('Avg nonplanar mpc solve time: %0.3f'%ts)
+    ts = np.mean(np.array([s.t_sol*1000 for s in pmpc_traj]))
+    print('Avg planar mpc solve time: %0.3f'%ts)
+    ts = np.mean(np.array([s.t_sol*1000 for s in mpc_traj]))
+    print('Avg nonplanar mpc solve time: %0.3f'%ts)
 
 
     matplotlib.rcParams['mathtext.fontset'] = 'cm'
@@ -161,7 +178,7 @@ for track in track_test:
             s = [s.p.s   for s in traj]
             y = [s.p.y   for s in traj]
             th = [s.p.ths for s in traj]
-            tha = [np.arctan(simulator.lr / (simulator.lf + simulator.lr) * np.tan(s.u.y)) + s.p.ths for s in traj]
+            tha = [np.arctan(dyn_3d.lr / (dyn_3d.lf + dyn_3d.lr) * np.tan(s.u.y)) + s.p.ths for s in traj]
             v = [np.sqrt(s.v.v1**2 + s.v.v2**2)   for s in traj]
             ua = [s.u.a.__float__()   for s in traj]
             uy = [s.u.y.__float__()   for s in traj]
@@ -209,7 +226,7 @@ for track in track_test:
         
     # Plot with or without PID: 
     #plot_timeseries_results([stanley_traj, pmpc_traj, mpc_traj], [':r', '--g', 'b'], filename = 'barc3d/results/test2.png')
-    # plot_timeseries_results([pid_traj, stanley_traj, pmpc_traj, mpc_traj], [':y', ':r', '--g', 'b'], ['PID', 'Stanley', 'Planar MPC', 'Nonplanar MPC'],filename = f'results/traj_{surface_name}_v{speed_plot}.png')
+    plot_timeseries_results([pid_traj, stanley_traj, pmpc_traj, mpc_traj], [':y', ':r', '--g', 'b'], ['PID', 'Stanley', 'Planar MPC', 'Nonplanar MPC'],filename = f'results/traj_{surface_name}_v{speed_plot}.png')
     # fig = plt.figure()
 
     # plot_solve_time(pmpc_traj)
