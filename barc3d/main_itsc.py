@@ -27,12 +27,12 @@ else:
 from barc3d.utils.run_lap import run_solo_lap
 
 vref = 9
-yref = 0
+yref = -5
 dt = 0.05
 
 track_list = get_available_surfaces()
 print(track_list)
-track_test = ['chicane_0%']
+track_test = ['tube_turn_100%']
 for track in track_test:
     surface_name = track.split('.')[0]
  
@@ -89,11 +89,11 @@ for track in track_test:
     #----------------------------------------------------------------------------------------------------------
     # TESTING
     # #----------------------------------------------------------------------------------------------------------
-    # dyn_3d = DynamicBicycle3D(vehicle_config = vehicle_config, surf = surf)
-    # pid_controller = PIDController(PIDConfig(dt = dyn_3d.dt, vref = vref, yref = yref))
-    # stanley_controller  = SimpleStanleyPIDController(StanleyConfig(dt = dyn_3d.dt, vref = vref,yref = yref))
-    # pmpc                = NonplanarMPCDyna(model=dynamic_model, config=NonplanarMPCDynaConfig(dt=dynamic_model.dt, use_planar=True, vref=vref, yref=yref))
-    # mpc                 = NonplanarMPCDyna(model=dynamic_model, config=NonplanarMPCDynaConfig(dt=dynamic_model.dt, use_planar=False, vref=vref, yref=yref))
+    vehicle_model = KinematicBicycle3D(vehicle_config = vehicle_config, surf = surf)
+    pid_controller = PIDController(PIDConfig(dt = vehicle_model.dt, vref = vref, yref = yref))
+    stanley_controller  = SimpleStanleyPIDController(StanleyConfig(dt = vehicle_model.dt, vref = vref,yref = yref))
+    pmpc                = NonplanarMPC(model=vehicle_model, config=NonplanarMPCConfig(dt=vehicle_model.dt, use_planar=True, vref=vref, yref=yref))
+    mpc                 = NonplanarMPC(model=vehicle_model, config=NonplanarMPCConfig(dt=vehicle_model.dt, use_planar=False, vref=vref, yref=yref))
         
 
     if use_glumpy_fig:
@@ -124,22 +124,22 @@ for track in track_test:
     #----------------------------------------------------------------------------------------------------------
     # TESTING
     #----------------------------------------------------------------------------------------------------------
-    pid_traj     = run_solo_lap(pid_controller, dyn_3d, surf, figure = figure, plot = True, lap = 'pid')
-    stanley_traj = run_solo_lap(stanley_controller, dyn_3d, surf, figure = figure, plot = True, lap = 'stanley')
-    pmpc_traj    = run_solo_lap(pmpc, dyn_3d, surf, figure = figure, plot = True, lap = 'planar mpc')
-    mpc_traj     = run_solo_lap(mpc, dyn_3d, surf, figure = figure, plot = True, lap = 'nonplanar mpc')
+    pid_traj     = run_solo_lap(pid_controller, vehicle_model, surf, figure = figure, plot = True, lap = 'pid')
+    stanley_traj = run_solo_lap(stanley_controller, vehicle_model, surf, figure = figure, plot = True, lap = 'stanley')
+    pmpc_traj    = run_solo_lap(pmpc, vehicle_model, surf, figure = figure, plot = True, lap = 'planar mpc')
+    mpc_traj     = run_solo_lap(mpc, vehicle_model, surf, figure = figure, plot = True, lap = 'nonplanar mpc')
 
     # save trajectories:
-    pkl.dump(pid_traj,     open(f'results/trajectories/pid_{surface_name}_{speed_plot}.pkl', 'wb'))
-    pkl.dump(stanley_traj, open(f'results/trajectories/stanley_{surface_name}_{speed_plot}.pkl', 'wb'))
-    pkl.dump(pmpc_traj,    open(f'results/trajectories/pmpc_{surface_name}_{speed_plot}.pkl', 'wb'))
-    pkl.dump(mpc_traj,     open(f'results/trajectories/mpc_{surface_name}_{speed_plot}.pkl', 'wb'))
+    # pkl.dump(pid_traj,     open(f'results/trajectories/pid_{surface_name}_{speed_plot}.pkl', 'wb'))
+    # pkl.dump(stanley_traj, open(f'results/trajectories/stanley_{surface_name}_{speed_plot}.pkl', 'wb'))
+    # pkl.dump(pmpc_traj,    open(f'results/trajectories/pmpc_{surface_name}_{speed_plot}.pkl', 'wb'))
+    # pkl.dump(mpc_traj,     open(f'results/trajectories/mpc_{surface_name}_{speed_plot}.pkl', 'wb'))
 
 
-    ts = np.mean(np.array([s.t_sol*1000 for s in pmpc_traj]))
-    print('Avg planar mpc solve time: %0.3f'%ts)
-    ts = np.mean(np.array([s.t_sol*1000 for s in mpc_traj]))
-    print('Avg nonplanar mpc solve time: %0.3f'%ts)
+    # ts = np.mean(np.array([s.t_sol*1000 for s in pmpc_traj]))
+    # print('Avg planar mpc solve time: %0.3f'%ts)
+    # ts = np.mean(np.array([s.t_sol*1000 for s in mpc_traj]))
+    # print('Avg nonplanar mpc solve time: %0.3f'%ts)
 
 
     matplotlib.rcParams['mathtext.fontset'] = 'cm'
@@ -178,7 +178,7 @@ for track in track_test:
             s = [s.p.s   for s in traj]
             y = [s.p.y   for s in traj]
             th = [s.p.ths for s in traj]
-            tha = [np.arctan(dyn_3d.lr / (dyn_3d.lf + dyn_3d.lr) * np.tan(s.u.y)) + s.p.ths for s in traj]
+            tha = [np.arctan(vehicle_model.lr / (vehicle_model.lf + vehicle_model.lr) * np.tan(s.u.y)) + s.p.ths for s in traj]
             v = [np.sqrt(s.v.v1**2 + s.v.v2**2)   for s in traj]
             ua = [s.u.a.__float__()   for s in traj]
             uy = [s.u.y.__float__()   for s in traj]
@@ -192,7 +192,7 @@ for track in track_test:
             ax6.plot(s,ua,  style)
             ax7.plot(s,uy,  style)
         
-        ax5.fill_between([min(s), max(s)], [mpc.config.Nmax, mpc.config.Nmax], [mpc.config.Nmin, mpc.config.Nmin], color = 'green',alpha = 0.3)
+        # ax5.fill_between([min(s), max(s)], [mpc.config.Nmax, mpc.config.Nmax], [mpc.config.Nmin, mpc.config.Nmin], color = 'green',alpha = 0.3)
         ax5.plot([min(s), max(s)], [0, 0], 'k')
         
         ax1.set_ylabel(r'$y$')
@@ -227,6 +227,7 @@ for track in track_test:
     # Plot with or without PID: 
     #plot_timeseries_results([stanley_traj, pmpc_traj, mpc_traj], [':r', '--g', 'b'], filename = 'barc3d/results/test2.png')
     plot_timeseries_results([pid_traj, stanley_traj, pmpc_traj, mpc_traj], [':y', ':r', '--g', 'b'], ['PID', 'Stanley', 'Planar MPC', 'Nonplanar MPC'],filename = f'results/traj_{surface_name}_v{speed_plot}.png')
+    # plot_timeseries_results([pid_traj, stanley_traj, mpc_traj], [':y', ':r', 'b'], ['PID', 'Stanley', 'Nonplanar MPC'],filename = f'results/traj_{surface_name}_v{speed_plot}.png')
     # fig = plt.figure()
 
     # plot_solve_time(pmpc_traj)

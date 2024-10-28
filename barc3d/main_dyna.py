@@ -51,6 +51,7 @@ for track in track_test:
     nonplanar_model = simulator
     planar_model = KinematicBicyclePlanar(vehicle_config = vehicle_config, surf = surf)
     dynamic_model = DynamicBicycle3D(vehicle_config = vehicle_config, surf = surf)
+    # dynamic_model = DynamicTwoTrackSlipInput3D(vehicle_config = vehicle_config, surf = surf)
     
     
 
